@@ -328,6 +328,18 @@ type Folder struct {
 	CreatedBy   string `json:"createdBy,omitempty"`
 }
 
+type FolderResult struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	ItemType  string `json:"itemType"`
+	ParentId  string `json:"parentId"`
+	CreatedBy string `json:"createdBy,omitempty"`
+}
+
+type FolderResults struct {
+	Data []FolderResult `json:"data"`
+}
+
 type Content struct {
 	ID             string      `json:"id,omitempty"`
 	Type           string      `json:"type"`

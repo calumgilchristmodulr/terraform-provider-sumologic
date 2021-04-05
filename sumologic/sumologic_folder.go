@@ -135,3 +135,74 @@ func (s *Client) getPersonalFolder() (*Folder, error) {
 	log.Println("####End loading Personal Folder####")
 	return &personalFolder, nil
 }
+
+//Retrieve a global folder by name
+func (s *Client) GetGlobalFolder(name string, timeout time.Duration) (*Folder, error) {
+	log.Println("####Begin getGlobalFolder####")
+
+	log.Printf("Getting all global folders")
+
+	url := "v2/content/folders/global"
+
+	//start the get job
+	rawJID, _, err := s.Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var jid JobId
+
+	//Parse the response for the JobId
+	err = json.Unmarshal(rawJID, &jid)
+
+	//Exit here if there was an error parsing the json
+	if err != nil {
+		return nil, err
+	}
+
+	url = fmt.Sprintf("v2/content/folders/global/%s/status", jid.ID)
+	log.Printf("Folder get job status url: %s", url)
+
+	waitForJob(url, timeout, s)
+
+	results_url := fmt.Sprintf("v2/content/folders/global/%s/result", jid.ID)
+	log.Printf("Folder get job status result url: %s", url)
+
+	//fetch the results
+	rawResults, _, err := s.Get(results_url)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var results FolderResults
+
+	//Parse the response for the JobId
+	err = json.Unmarshal(rawResults, &results)
+
+	//Exit here if there was an error parsing the json
+	if err != nil {
+		return nil, err
+	}
+
+	var folder_id string
+
+	for _, folder := range results.Data {
+		if folder.ItemType == "Folder" {
+			if folder.Name == name {
+				folder_id = folder.ID
+				break
+			}
+		}
+	}
+
+	if folder_id == "" {
+		return nil, fmt.Errorf("Folder %s not found", name)
+	}
+
+	folder, err := s.GetFolder(folder_id)
+
+	log.Println("####End getGlobalFolder####")
+	return folder, err
+}
